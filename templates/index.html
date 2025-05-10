@@ -10,95 +10,132 @@
     <h1>Recipes</h1>
     <div id="recipesList">Loading recipes...</div>
 
+    <!-- Button to show the form -->
     <button onclick="document.getElementById('addRecipeForm').style.display='block'">Add New Recipe</button>
 
+    <!-- Add recipe form, initially hidden -->
     <div id="addRecipeForm" style="display:none;">
         <h2>Add Recipe</h2>
         <input type="text" id="newName" placeholder="Name"><br>
         <textarea id="newIngredients" placeholder="Ingredients"></textarea><br>
         <textarea id="newInstructions" placeholder="Instructions"></textarea><br>
-        <button onclick="submitNewRecipe()">Submit</button>
+        <div class="button-container">
+            <button onclick="submitNewRecipe()">Submit</button>
+            <button type="button" id="cancelButton">Cancel</button>
+        </div>
     </div>
 
-    <script>
-    window.onload = function() {
-        fetch('/recipes')
-            .then(response => response.json())
-            .then(data => {
-                const listDiv = document.getElementById('recipesList');
-                let html = "<ul>";
-                data.forEach(recipe => {
-                    html += `
-                        <li id="recipe-${recipe.id}">
-                            <div id="view-${recipe.id}">
-                                <strong>${recipe.name}</strong><br>
-                                <em>Ingredients:</em><br>${recipe.ingredients}<br>
-                                <em>Instructions:</em><br>${recipe.instructions}<br>
-                                <div class="button-container">
-                                    <button onclick="editRecipe(${recipe.id})">Edit</button>
-                                    <button onclick="deleteRecipe(${recipe.id})">Delete</button>
-                                </div>
-                            </div>
-                            <div id="edit-${recipe.id}" style="display:none;">
-                                <input id="name-${recipe.id}" value="${recipe.name}"><br>
-                                <textarea id="ingredients-${recipe.id}">${recipe.ingredients}</textarea><br>
-                                <textarea id="instructions-${recipe.id}">${recipe.instructions}</textarea><br>
-                                <button onclick="updateRecipe(${recipe.id})">Save</button>
-                                <!-- Cancel button to revert the changes -->
-                                <button onclick="cancelEdit(${recipe.id})">Cancel</button>
-                            </div>
-                        </li>`;
-                });
-                html += "</ul>";
-                listDiv.innerHTML = html;
-            });
-    }
+    <!-- EDIT Recipe Form, initially hidden,  same layout as the Add Recipe form-->
+    <div id="editRecipeForm" style="display:none;">
+        <h2>Edit Recipe</h2>
+        <input type="hidden" id="editId"> <!-- Hidden input to store the recipe ID -->
+        <input type="text" id="editName" placeholder="Name"><br>
+        <textarea id="editIngredients" placeholder="Ingredients"></textarea><br>
+        <textarea id="editInstructions" placeholder="Instructions"></textarea><br>
+        <div class="button-container">
+            <button onclick="updateRecipe()">Save</button>
+            <button type="button" onclick="closeEditForm()">Cancel</button>
+        </div>
+    </div>
 
-    function submitNewRecipe() {
-        const name = document.getElementById('newName').value;
-        const ingredients = document.getElementById('newIngredients').value;
-        const instructions = document.getElementById('newInstructions').value;
-
-        fetch('/add_recipe', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ name, ingredients, instructions })
-        })
+<script>
+window.onload = function() {
+    fetch('/recipes')
         .then(response => response.json())
-        .then(recipe => location.reload());
-    }
+        .then(data => {
+            const listDiv = document.getElementById('recipesList');
+            let html = "<ul>";
+            data.forEach(recipe => {
+                // Build a string using backticks
+                html += `                               
+                    <li id="recipe-${recipe.id}">
+                        <div id="view-${recipe.id}">
+                            <strong>${recipe.name}</strong><br>
+                            <em>Ingredients:</em><br><span id="ingredients-${recipe.id}">${recipe.ingredients}</span><br>
+                            <em>Instructions:</em><br><span id="instructions-${recipe.id}">${recipe.instructions}</span><br>
+                            <div class="button-container">
+                                <button onclick="editRecipe(${recipe.id})">Edit</button>
+                                <button onclick="deleteRecipe(${recipe.id})">Delete</button>
+                            </div>
+                        </div>
+                    </li>`;
+            });
+            html += "</ul>";
+            listDiv.innerHTML = html;
+        });
 
-    function deleteRecipe(id) {
-        fetch(`/recipes/${id}`, { method: 'DELETE' })
-            .then(() => location.reload());
-    }
+    // Attach the cancel button event for Add Recipe form
+    document.getElementById('cancelButton').addEventListener('click', function () {
+        document.getElementById('addRecipeForm').style.display = 'none';
+    });
+};
 
-    function editRecipe(id) {
-        document.getElementById(`view-${id}`).style.display = 'none';
-        document.getElementById(`edit-${id}`).style.display = 'block';
-    }
+// Add new recipe
+function submitNewRecipe() {
+    const name = document.getElementById('newName').value;
+    const ingredients = document.getElementById('newIngredients').value;
+    const instructions = document.getElementById('newInstructions').value;
 
-    function cancelEdit(id) {
-    // Hide the edit form and show the view (opposite of the function editRecipe above)
-    document.getElementById(`edit-${id}`).style.display = 'none';
-    document.getElementById(`view-${id}`).style.display = 'block';
-    }
+    fetch('/add_recipe', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name, ingredients, instructions })
+    })
+    .then(response => response.json())
+    .then(recipe => location.reload());
+}
 
-    function updateRecipe(id) {
-        const name = document.getElementById(`name-${id}`).value;
-        const ingredients = document.getElementById(`ingredients-${id}`).value;
-        const instructions = document.getElementById(`instructions-${id}`).value;
-
-        fetch(`/recipes/${id}`, {
-            method: 'PUT',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ name, ingredients, instructions })
-        })
+function deleteRecipe(id) {
+    fetch(`/recipes/${id}`, { method: 'DELETE' })
         .then(() => location.reload());
-    }
+}
 
+// Edit Recipe Form
+function editRecipe(id) {
+    // Get the recipe details from the view div
+    const name = document.getElementById(`view-${id}`).querySelector('strong').innerText;
+    
+    // Get the ingredients and instructions from the correct elements
+    const ingredients = document.getElementById(`ingredients-${id}`).innerText;
+    const instructions = document.getElementById(`instructions-${id}`).innerText;
 
-    </script>
+    // Set the values in the edit form
+    document.getElementById('editId').value = id;
+    document.getElementById('editName').value = name;
+    document.getElementById('editIngredients').value = ingredients;
+    document.getElementById('editInstructions').value = instructions;
+
+    // Show the edit form and hide the view
+    document.getElementById('editRecipeForm').style.display = 'block';
+    document.getElementById('view-' + id).style.display = 'none';
+}
+
+// Close Edit Form
+function closeEditForm() {
+    // Hide the edit form and show the view again
+    document.getElementById('editRecipeForm').style.display = 'none';
+    document.getElementById('view-' + document.getElementById('editId').value).style.display = 'block';
+}
+
+// Update Recipe
+function updateRecipe() {
+    const id = document.getElementById('editId').value; // Get the ID of the recipe being edited
+    const name = document.getElementById('editName').value;
+    const ingredients = document.getElementById('editIngredients').value;
+    const instructions = document.getElementById('editInstructions').value;
+
+    fetch(`/recipes/${id}`, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name, ingredients, instructions })
+    })
+    .then(() => {
+        // Reload the page to reflect the updated recipe
+        location.reload();
+    });
+}
+</script>
 </div>
 </body>
 </html>
+

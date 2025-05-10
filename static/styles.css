@@ -27,12 +27,6 @@ body {
     text-align: center;
 }
 
-/* Hover effect */
-.card:hover {
-    transform: translateY(-10px); /* Slightly lift the card */
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2); /* Deeper shadow for depth */
-}
-
 /* Heading inside card */
 .card h1 {
     font-size: 28px;
@@ -93,10 +87,19 @@ button:hover {
     transition: box-shadow 0.3s ease, transform 0.3s ease; /* Smooth transition for hover effect */
 }
 
-#addRecipeForm {
+#addRecipeForm, #editRecipeForm {
     display: none; /* Initially hidden */
-    margin-top: 20px;
-    width: 100%;
+    position: fixed; /* Keep it centered regardless of scroll */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Perfect centering */
+    background: white;
+    padding: 30px;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 20px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
 }
 
 input[type="text"], textarea {
@@ -112,3 +115,4 @@ textarea {
     height: 150px;
     resize: none;
 }
+
