@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>All Recipes</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="card">
+    <h1>Recipes</h1>
+    <div id="recipesList">Loading recipes...</div>
+
+    <button onclick="document.getElementById('addRecipeForm').style.display='block'">Add New Recipe</button>
+
+    <div id="addRecipeForm" style="display:none;">
+        <h2>Add Recipe</h2>
+        <input type="text" id="newName" placeholder="Name"><br>
+        <textarea id="newIngredients" placeholder="Ingredients"></textarea><br>
+        <textarea id="newInstructions" placeholder="Instructions"></textarea><br>
+        <button onclick="submitNewRecipe()">Submit</button>
+    </div>
+
+    <script>
+    window.onload = function() {
+        fetch('/recipes')
+            .then(response => response.json())
+            .then(data => {
+                const listDiv = document.getElementById('recipesList');
+                let html = "<ul>";
+                data.forEach(recipe => {
+                    html += `
+                        <li id="recipe-${recipe.id}">
+                            <div id="view-${recipe.id}">
+                                <strong>${recipe.name}</strong><br>
+                                <em>Ingredients:</em><br>${recipe.ingredients}<br>
+                                <em>Instructions:</em><br>${recipe.instructions}<br>
+                                <div class="button-container">
+                                    <button onclick="editRecipe(${recipe.id})">Edit</button>
+                                    <button onclick="deleteRecipe(${recipe.id})">Delete</button>
+                                </div>
+                            </div>
+                            <div id="edit-${recipe.id}" style="display:none;">
+                                <input id="name-${recipe.id}" value="${recipe.name}"><br>
+                                <textarea id="ingredients-${recipe.id}">${recipe.ingredients}</textarea><br>
+                                <textarea id="instructions-${recipe.id}">${recipe.instructions}</textarea><br>
+                                <button onclick="updateRecipe(${recipe.id})">Save</button>
+                                <!-- Cancel button to revert the changes -->
+                                <button onclick="cancelEdit(${recipe.id})">Cancel</button>
+                            </div>
+                        </li>`;
+                });
+                html += "</ul>";
+                listDiv.innerHTML = html;
+            });
+    }
+
+    function submitNewRecipe() {
+        const name = document.getElementById('newName').value;
+        const ingredients = document.getElementById('newIngredients').value;
+        const instructions = document.getElementById('newInstructions').value;
+
+        fetch('/add_recipe', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name, ingredients, instructions })
+        })
+        .then(response => response.json())
+        .then(recipe => location.reload());
+    }
+
+    function deleteRecipe(id) {
+        fetch(`/recipes/${id}`, { method: 'DELETE' })
+            .then(() => location.reload());
+    }
+
+    function editRecipe(id) {
+        document.getElementById(`view-${id}`).style.display = 'none';
+        document.getElementById(`edit-${id}`).style.display = 'block';
+    }
+
+    function cancelEdit(id) {
+    // Hide the edit form and show the view (opposite of the function editRecipe above)
+    document.getElementById(`edit-${id}`).style.display = 'none';
+    document.getElementById(`view-${id}`).style.display = 'block';
+    }
+
+    function updateRecipe(id) {
+        const name = document.getElementById(`name-${id}`).value;
+        const ingredients = document.getElementById(`ingredients-${id}`).value;
+        const instructions = document.getElementById(`instructions-${id}`).value;
+
+        fetch(`/recipes/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ name, ingredients, instructions })
+        })
+        .then(() => location.reload());
+    }
+
+
+    </script>
+</div>
+</body>
+</html>
